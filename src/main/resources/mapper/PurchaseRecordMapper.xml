@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- UserMapper映射文件 -->
+<mapper namespace="com.tunan.inventoryManagementSystem.dao.PurchaseRecordDao">
+
+    <resultMap id="PurchaseRecordEntityMap" type="com.tunan.inventoryManagementSystem.entity.PurchaseRecordEntity">
+        <result column="id" property="id" jdbcType="BIGINT" />
+        <result column="record_number" property="recordNumber" jdbcType="VARCHAR"/>
+        <result column="function_id" property="pigFunctionId" jdbcType="SMALLINT" />
+        <result column="type_id" property="pigTypeId" jdbcType="SMALLINT" />
+        <result column="provider_id" property="providerId" jdbcType="BIGINT"/>
+        <result column="purchase_count" property="purchaseCount" jdbcType="INTEGER" />
+        <result column="pounds" property="pounds" jdbcType="REAL" />
+        <result column="expected_purchase_price" property="expectedPurchasePrice" jdbcType="REAL"/>
+        <result column="actual_purchase_price" property="actualPurchasePrice" jdbcType="REAL"/>
+        <result column="create_datetime" property="createDatetime" jdbcType="TIMESTAMP" typeHandler="org.apache.ibatis.type.LocalDateTimeTypeHandler"/>
+        <result column="update_datetime" property="updateDatetime" jdbcType="TIMESTAMP" typeHandler="org.apache.ibatis.type.LocalDateTimeTypeHandler"/>
+        <result column="purchaser_id" property="purchaserId" jdbcType="BIGINT"/>
+        <result column="is_return" property="isReturn" jdbcType="TINYINT"/>
+        <result column="is_delete" property="isDelete" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <select id="count" resultType="int">
+        select count(*) from t_purchase_record
+        where
+            is_delete = 0
+    </select>
+
+    <select id="pageQuery" resultMap="PurchaseRecordEntityMap">
+        select
+            PR.id,
+            PR.record_number,
+            PR.function_id,
+            PR.type_id,
+            PR.provider_id,
+            PR.purchase_count,
+            PR.pounds,
+            PR.expected_purchase_price,
+            PR.actual_purchase_price,
+            PR.purchaser_id,
+            PR.create_datetime,
+            PR.update_datetime
+        from
+            t_purchase_record as PR
+        where
+            PR.is_delete = 0 and is_return = 0
+        <if test="sortType == 1">
+            order by create_datetime
+        </if>
+        limit #{pageSize} offset #{offset}
+    </select>
+
+
+    <!--  //分页查询销售记录，查询结果受登录用户的身份限制，除非是管理员。
+    List<PurchaseRecordEntity> pageQueryLimitToRole(Integer offset, Integer pageSize, Integer sortType, Long workerId);
+    -->
+    <select id="pageQueryLimitToRole" resultMap="PurchaseRecordEntityMap">
+        select
+            PR.id,
+            PR.record_number,
+            PR.function_id,
+            PR.type_id,
+            PR.provider_id,
+            PR.purchase_count,
+            PR.pounds,
+            PR.expected_purchase_price,
+            PR.actual_purchase_price,
+            PR.purchaser_id,
+            PR.create_datetime,
+            PR.update_datetime
+        from
+            t_purchase_record as PR
+        where
+            PR.purchaser_id = #{workerId} and PR.is_delete = 0 and is_return = 0
+        <if test="sortType == 1">
+            order by create_datetime
+        </if>
+        limit #{pageSize} offset #{offset}
+    </select>
+
+
+    <!-- 条件查询销售记录，但是受登录用户的身份影
+        List<PurchaseRecordEntity> pageQueryByBaseConditionLimitToRole(Integer pigFunctionId, Integer pigTypeId,
+                                                        Integer pageNum, Integer offset,Integer roleId, Long workerId);
+    -->
+    <select id="pageQueryByBaseConditionLimitToRole" resultMap="PurchaseRecordEntityMap">
+        select
+            PR.id,
+            PR.record_number,
+            PR.function_id,
+            PR.type_id,
+            PR.provider_id,
+            PR.purchase_count,
+            PR.pounds,
+            PR.expected_purchase_price,
+            PR.actual_purchase_price,
+            PR.purchaser_id,
+            PR.create_datetime,
+            PR.update_datetime
+        from
+            t_purchase_record as PR
+        where
+            is_return = 0 and is_delete = 0
+            <if test="roleId != 1 and roleId != 2">
+                and PR.purchaser_id = #{workerId}
+            </if>
+            <if test="pigFunctionId != null">
+                and PR.function_id = #{pigFunctionId}
+            </if>
+            <if test="pigTypeId != null">
+                and PR.type_id = #{pidTypeId}
+            </if>
+            <if test="pigFunctionId == null and pigTypeId == null">
+                1=0
+            </if>
+    </select>
+
+
+    <!-- 根据始末时间查询某段时间范围内的所有记录
+         List<PurchaseRecordEntity> getPurchaseRecordsByTime(LocalDateTime startDate, LocalDateTime deadTime, Integer roleId, Long purchaserId);
+    -->
+    <select id="getPurchaseRecordsByTime" resultMap="PurchaseRecordEntityMap">
+        select
+            PR.id,
+            PR.record_number,
+            PR.function_id,
+            PR.type_id,
+            PR.provider_id,
+            PR.purchase_count,
+            PR.pounds,
+            PR.expected_purchase_price,
+            PR.actual_purchase_price,
+            PR.purchaser_id,
+            PR.create_datetime,
+            PR.update_datetime
+        from
+            t_purchase_record as PR
+        where
+            <if test="roleId != 1 and roleId != 2">
+                PR.purchaser_id = #{purchaserId} and
+            </if>
+            is_delete = 0 and is_return = 0
+            create_datetime between #{startDate} and #{deadTime}
+
+    </select>
+
+
+    <!-- 根据订单的数据库主键来查询其对应订单的worker的id
+         Long getWorkerIdById(Long id); -->
+    <select id="getWorkerIdById" resultType="Long">
+        select purchaser_id
+        from t_purchase_record
+        where id = #{id}
+    </select>
+
+
+    <!-- 根据订单号查询销售订单
+         PurchaseRecordEntity getPurchaseRecordByRecordNumber(String recordNumber, Integer roleId, Long purchaserId);
+    -->
+    <select id="getPurchaseRecordByRecordNumber" resultMap="PurchaseRecordEntityMap">
+        select
+            PR.id,
+            PR.record_number,
+            PR.function_id,
+            PR.type_id,
+            PR.provider_id,
+            PR.purchase_count,
+            PR.pounds,
+            PR.expected_purchase_price,
+            PR.actual_purchase_price,
+            PR.purchaser_id,
+            PR.create_datetime,
+            PR.update_datetime
+        from
+            t_purchase_record as PR
+        where
+            record_number = #{recordNumber}
+            <if test="roleId != 1 and roleId != 2">
+                and PR.purchaser_id = #{purchaserId}
+            </if>
+            and is_return = 0 and is_delete = 0
+    </select>
+
+    <!--    根据订单的数据库主键来查询其对应订单，但是受角色身份影响，判断该用户身份是否有权限查看这条信息。
+            PurchaseRecordEntity getPurchaseRecordByIdLimitToRole(Long id, Integer roleId, Long purchaserId);
+    -->
+    <select id="getPurchaseRecordByIdLimitToRole" resultMap="PurchaseRecordEntityMap">
+        select
+            PR.id,
+            PR.record_number,
+            PR.function_id,
+            PR.type_id,
+            PR.provider_id,
+            PR.purchase_count,
+            PR.pounds,
+            PR.expected_purchase_price,
+            PR.actual_purchase_price,
+            PR.purchaser_id,
+            PR.create_datetime,
+            PR.update_datetime
+        from
+            t_purchase_record as PR
+        where
+            PR.id = #{id}
+            <if test="roleId != 1 and roleId != 2">
+                and PR.purchaser_id = #{purchaserId}
+            </if>
+            and is_return = 0 and is_delete = 0
+    </select>
+
+    <!-- 根据经销商id查询对应销售单
+         List<PurchaseRecordEntity> getPurchaseRecordByProviderId(Long providerId);
+    -->
+    <select id="getPurchaseRecordByProviderId" resultMap="PurchaseRecordEntityMap">
+        select
+            PR.id,
+            PR.record_number,
+            PR.function_id,
+            PR.type_id,
+            PR.provider_id,
+            PR.purchase_count,
+            PR.pounds,
+            PR.expected_purchase_price,
+            PR.actual_purchase_price,
+            PR.purchaser_id,
+            PR.create_datetime,
+            PR.update_datetime
+        from
+            t_purchase_record as PR
+        where
+            provider_id = #{providerId} and is_delete = 0 and is_return = 0
+    </select>
+
+
+    <!--  根据purchaserId查找订单
+          List<PurchaseRecordEntity> getPurchaseRecordByPurchaserId(Long purchaserId);
+    -->
+    <select id="getPurchaseRecordByPurchaserId" resultMap="PurchaseRecordEntityMap">
+        select
+            PR.id,
+            PR.record_number,
+            PR.function_id,
+            PR.type_id,
+            PR.provider_id,
+            PR.purchase_count,
+            PR.pounds,
+            PR.expected_purchase_price,
+            PR.actual_purchase_price,
+            PR.purchaser_id,
+            PR.create_datetime,
+            PR.update_datetime
+        from
+            t_purchase_record as PR
+        WHERE
+            purchaser_id = #{purchaserId} and is_delete = 0 and is_return = 0
+    </select>
+
+
+    <!-- 根据订单的数据库主键来查询其对应订单
+         PurchaseRecordEntity getPurchaseRecordById(Long id);
+    -->
+    <select id="getPurchaseRecordById" resultMap="PurchaseRecordEntityMap">
+        select
+            PR.id,
+            PR.record_number,
+            PR.function_id,
+            PR.type_id,
+            PR.provider_id,
+            PR.purchase_count,
+            PR.pounds,
+            PR.expected_purchase_price,
+            PR.actual_purchase_price,
+            PR.purchaser_id,
+            PR.create_datetime,
+            PR.update_datetime
+        from
+            t_purchase_record as PR
+        where
+            id = #{id} and is_delete = 0 and is_return = 0
+    </select>
+
+
+    <!-- 根据订单号码删除订单
+         int delPurchaseRecordByRecordNumber(String recordNumber);
+     -->
+    <update id="delPurchaseRecordByRecordNumber" parameterType="String">
+        update t_purchase_record
+        set is_delete = 1
+        where record_number = #{recordNumber}
+    </update>
+
+
+    <!-- 根据订单ID(数据库主键)删除订单
+         int delPurchaseRecordByID(Long id);
+    -->
+    <update id="delPurchaseRecordByID" parameterType="Long">
+        update t_purchase_record
+        set is_delete = 1
+        where id = #{id}
+    </update>
+
+    <!-- 添加采购记录
+         int addPurchaseRecord(PurchaseRecordEntity purchaseRecordEntity);
+    -->
+    <insert id="addPurchaseRecord" parameterType="com.tunan.inventoryManagementSystem.entity.PurchaseRecordEntity">
+        insert into t_purchase_record
+        (
+            record_number, function_id, type_id,
+            purchaser_id, provider_id, purchase_count,
+            pounds, expected_purchase_price, actual_purchase_price,
+            create_datetime, update_datetime,is_delete,is_return
+        )
+        VALUES
+        (
+            #{recordNumber},#{pigFunctionId},#{pigTypeId},
+            #{purchaserId},#{providerId},#{purchaseCount},
+            #{pounds},#{expectedPurchasePrice},#{actualPurchasePrice},
+            #{createDatetime},#{updateDatetime},#{isDelete},#{isReturn}
+        )
+    </insert>
+
+    <!-- 更改采购记录
+         int updatePurchaseRecord(PurchaseRecordEntity purchaseRecordEntity);
+     -->
+    <update id="updatePurchaseRecord" parameterType="com.tunan.inventoryManagementSystem.entity.PurchaseRecordEntity">
+        update t_purchase_record
+        <set>
+            <if test="pigTypeId != null">
+                type_id = #{pigTypeId},
+            </if>
+            <if test="pigFunctionId != null">
+                function_id = #{pigFunctionId},
+            </if>
+            <if test="providerId != null">
+                provider_id = #{providerId},
+            </if>
+            <if test="purchaseCount != null">
+                purchase_count = #{purchaseCount},
+            </if>
+            <if test="pounds != null">
+                pounds = #{pounds},
+            </if>
+            <if test="actualPurchasePrice != null">
+                actual_purchase_price = #{actualPurchasePrice},
+            </if>
+            <if test="expectedPurchasePrice != null">
+                expected_purchase_price = #{expectedPurchasePrice}
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+</mapper>

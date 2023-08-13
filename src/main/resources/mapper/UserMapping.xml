@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- UserMapper映射文件 -->
+<mapper namespace="com.tunan.inventoryManagementSystem.dao.UserDao">
+
+    <!-- 让查询出来的数据与对应实体类的属性进行绑定 -->
+    <resultMap id="UserEntityMap" type="com.tunan.inventoryManagementSystem.entity.UserEntity">
+        <result column="id" property="id" jdbcType="BIGINT" />
+        <result column="username" property="username" jdbcType="VARCHAR" />
+        <result column="password" property="password" jdbcType="VARCHAR" />
+        <result column="role_id" property="roleId" jdbcType="SMALLINT" />
+        <result column="worker_id" property="workerId" jdbcType="BIGINT"/>
+        <result column="nick_name" property="nickName" jdbcType="VARCHAR"/>
+        <result column="true_name" property="trueName" jdbcType="VARCHAR" />
+        <result column="create_datetime" property="createDatetime" jdbcType="TIMESTAMP" typeHandler="org.apache.ibatis.type.LocalDateTimeTypeHandler"/>
+        <result column="update_datetime" property="updateDatetime" jdbcType="TIMESTAMP" typeHandler="org.apache.ibatis.type.LocalDateTimeTypeHandler" />
+        <result column="is_delete" property="isDelete" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <select id="getUserByUsername" resultMap="UserEntityMap" parameterType="String">
+        select
+            id,
+            username,
+            password,
+            role_id,
+            worker_id,
+            nick_name,
+            true_name,
+            create_datetime,
+            update_datetime,
+            is_delete
+        from
+            t_user
+        where
+            username = #{username}
+    </select>
+
+
+    <!-- 查询登录用户的权限信息
+         List<String> getUserPermissions(Integer roleId);
+         这里使用了联表查询，可能不是很符合规范。
+    -->
+    <select id="getUserPermissions" resultType="String">
+        select
+            t_menu.menu_name
+        from
+            t_role_menu,t_menu
+        where
+            t_role_menu.role_id = #{roleId} and t_role_menu.menus_id = t_menu.menu_id
+    </select>
+
+
+
+</mapper>

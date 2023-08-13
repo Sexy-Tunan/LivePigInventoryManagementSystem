@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- UserMapper映射文件 -->
+<mapper namespace="com.tunan.inventoryManagementSystem.dao.ProviderDao">
+    <resultMap id="ProviderVOMap" type="com.tunan.inventoryManagementSystem.entity.VO.ProviderVO">
+        <result column="id" property="id" jdbcType="BIGINT"/>
+        <result column="enterprise_name" property="enterpriseName" jdbcType="VARCHAR"/>
+        <result column="address" property="address" jdbcType="VARCHAR"/>
+        <result column="contact" property="contact" jdbcType="VARCHAR"/>
+        <result column="contact_identity_number" property="identityNumber" jdbcType="VARCHAR"/>
+        <result column="phone_number" property="phoneNumber" jdbcType="VARCHAR"/>
+        <result column="create_datetime" property="createDatetime" jdbcType="TIMESTAMP" typeHandler="org.apache.ibatis.type.LocalDateTimeTypeHandler"/>
+    </resultMap>
+
+    <select id="count" resultType="int">
+        select count(*) from t_provider
+        where
+            is_delete = 0
+    </select>
+
+    <!-- 查询供应商 List<ProviderVO> pageQueryProviders(Integer offset, Integer pageSize);-->
+    <select id="pageQueryProviders" resultMap="ProviderVOMap">
+        select TP.id,
+               TP.address,
+               TP.contact,
+               TP.contact_identity_number,
+               TP.enterprise_name,
+               TP.phone_number,
+               TP.create_datetime
+        from t_provider as TP
+        where is_delete = 0
+        limit #{pageSize} offset #{offset}
+    </select>
+
+    <!-- 获取所有供应商的名字 List<String> getAllProviderName(); -->
+    <select id="getAllProviderName" resultType="String">
+        SELECT TP.enterprise_name
+        FROM t_provider as TP
+        where is_delete = 0
+    </select>
+
+    
+    <!-- 获取所有供应商 List<ProviderVO> getAllProvider(); -->
+    <select id="getAllProvider" resultMap="ProviderVOMap">
+        select TP.id,
+               TP.address,
+               TP.contact,
+               TP.contact_identity_number,
+               TP.enterprise_name,
+               TP.phone_number,
+               TP.create_datetime
+        from t_provider as TP
+        where is_delete = 0
+    </select>
+
+
+    
+    <!-- 根据企业名字查询供应商 ProviderVO getProviderByName(String enterpriseName); -->
+    <select id="getProviderByName" resultMap="ProviderVOMap" parameterType="String">
+        select TP.id,
+               TP.address,
+               TP.contact,
+               TP.contact_identity_number,
+               TP.enterprise_name,
+               TP.phone_number,
+               TP.create_datetime
+        from t_provider as TP
+        where enterprise_name = #{enterpriseName} and is_delete = 0
+    </select>
+
+
+    <!-- Long getIdByEnterpriseName(String enterpriseName); -->
+    <select id="getIdByEnterpriseName" resultType="Long" parameterType="String">
+        SELECT TP.id
+        FROM t_provider as TP
+        WHERE enterprise_name = #{enterpriseName}
+    </select>
+    
+    <!-- 根据id数据库主键查询 ProviderVO getProviderById(Integer id);-->
+    <select id="getProviderById" resultMap="ProviderVOMap" parameterType="Long">
+        select TP.id,
+               TP.address,
+               TP.contact,
+               TP.contact_identity_number,
+               TP.enterprise_name,
+               TP.phone_number,
+               TP.create_datetime
+        from t_provider as TP
+        where id = #{id} and is_delete = 0
+    </select>
+
+    
+
+    <!-- 根据企业的负责人查询供应商(返回结果为list，因为可能重名) List<ProviderVO> getProvidersByContact(String contact);-->
+    <select id="getProvidersByContact" resultMap="ProviderVOMap" parameterType="String">
+        select TP.id,
+               TP.address,
+               TP.contact,
+               TP.contact_identity_number,
+               TP.enterprise_name,
+               TP.phone_number,
+               TP.create_datetime
+        from t_provider as TP
+        where contact = #{contact} and is_delete = 0
+    </select>
+    
+
+    <!-- 根据条件查询供应商  List<ProviderVO> getProvidersByConditions(String contact,String address, String phoneNumber);-->
+    <select id="getProvidersByConditions" resultMap="ProviderVOMap">
+        select TP.id,
+               TP.address,
+               TP.contact,
+               TP.contact_identity_number,
+               TP.enterprise_name,
+               TP.phone_number,
+               TP.create_datetime
+        from t_provider as TP
+        <where>
+            <if test="contact != null">
+                TP.contact = #{contact}
+            </if>
+            <if test="phoneNumber != null">
+                TP.phone_number = #{phoneNumber}
+            </if>
+            <if test="address != null">
+                TP.address LIKE concat('%',#{address},'%')
+            </if>
+        </where>
+    </select>
+
+
+
+    <!-- 添加供应商 int addProvider(ProviderEntity providerEntity);-->
+    <insert id="addProvider" parameterType="com.tunan.inventoryManagementSystem.entity.ProviderEntity">
+        insert into t_provider
+        (
+         enterprise_name,
+         address, contact,
+         contact_identity_number,
+         phone_number, create_datetime,
+         update_datetime, is_delete
+        )
+        VALUES
+        (
+            #{enterpriseName},#{address},#{contact},#{identityNumber},
+            #{phoneNumber},#{createDatetime},#{updateDatetime},#{isDelete}
+        )
+    </insert>
+
+
+
+    <!-- 删除供应商 int delProvider(Integer id);-->
+    <update id="delProviderById">
+        update t_provider
+        set is_delete = 1
+        where id = #{id}
+    </update>
+
+
+    <!-- 删除供应商 int delProvider(String enterpriseName);-->
+    <update id="delProviderByName">
+        update t_provider
+        set is_delete = 1
+        where enterprise_name = #{enterpriseName}
+    </update>
+
+    
+    <!-- 修改供应商的基本信息 int updateProviderBaseMsg(ProviderEntity providerEntity);-->
+    <update id="updateProviderBaseMsg" parameterType="com.tunan.inventoryManagementSystem.entity.ProviderEntity">
+        update t_provider
+        set
+            update_datetime = #{updateDatetime}
+            <if test="enterpriseName != null and enterpriseName != ''">
+                ,enterprise_name = #{enterpriseName}
+            </if>
+            <if test="contact != null and identityNumber != null">
+                ,contact = #{contact}
+                ,contact_identity_number = #{identityNumber}
+            </if>
+            <if test="phoneNumber != null">
+                ,phone_number = #{phoneNumber}
+            </if>
+            <if test="address != null">
+                ,address = #{address}
+            </if>
+        where
+            id = #{id}
+    </update>
+</mapper>

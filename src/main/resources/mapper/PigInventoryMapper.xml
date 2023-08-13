@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- UserMapper映射文件 -->
+<mapper namespace="com.tunan.inventoryManagementSystem.dao.PigInventoryDao">
+
+    <resultMap id="PigInventoryEntityMap" type="com.tunan.inventoryManagementSystem.entity.PigInventoryEntity">
+        <result column="id" property="id" jdbcType="INTEGER"/>
+        <result column="function_id" property="functionId" jdbcType="SMALLINT"/>
+        <result column="type_id" property="typeId" jdbcType="SMALLINT"/>
+        <result column="inventory_count" property="inventoryCount" jdbcType="INTEGER"/>
+        <result column="inventory_pounds" property="inventoryPounds" jdbcType="REAL"/>
+        <result column="warning_inventory_line" property="warningInventoryLine" jdbcType="INTEGER"/>
+        <result column="update_datetime" property="updateDatetime" jdbcType="TIMESTAMP" typeHandler="org.apache.ibatis.type.LocalDateTimeTypeHandler"/>
+        <result column="create_datetime" property="createDatetime" jdbcType="TIMESTAMP" typeHandler="org.apache.ibatis.type.LocalDateTimeTypeHandler"/>
+        <result column="is_delete" property="isDelete" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <select id="count" resultType="int">
+        select count(*) from t_pig_inventory
+        where
+            is_delete = 0
+    </select>
+
+    <!--    分页查询
+            List<PigInventoryEntity> pageQuery(Integer pageNum, Integer pageSize);
+    -->
+    <select id="pageQuery" resultMap="PigInventoryEntityMap">
+        select
+            PI.id,
+            PI.function_id,
+            PI.type_id,
+            PI.inventory_count,
+            PI.inventory_pounds,
+            PI.warning_inventory_line,
+            PI.update_datetime,
+            PI.is_delete
+        from
+            t_pig_inventory PI
+        where
+            is_delete = 0
+        limit #{pageSize} offset #{offset}
+    </select>
+
+
+    <!-- List<PigInventoryEntity> pageQueryByCondition(Integer function, Integer type, Integer pageNum, Integer pageSize); -->
+    <select id="pageQueryByCondition" resultMap="PigInventoryEntityMap">
+        select
+            PI.id,
+            PI.function_id,
+            PI.type_id,
+            PI.inventory_count,
+            PI.inventory_pounds,
+            PI.warning_inventory_line,
+            PI.update_datetime,
+            PI.is_delete
+        from
+            t_pig_inventory PI
+        <where>
+                is_delete = 0
+            <if test="functionId != null">
+                ,function_id = #{functionId}
+            </if>
+            <if test="typeId != null">
+                ,type_id = #{typeId}
+            </if>
+        </where>
+        limit #{pageSize} offset #{offset}
+    </select>
+
+
+    <!-- List<PigInventoryEntity> pageQueryWarningInventory(Integer pageNum, Integer pageSize);-->
+    <select id="pageQueryWarningInventory" resultMap="PigInventoryEntityMap">
+        select
+            PI.id,
+            PI.function_id,
+            PI.type_id,
+            PI.inventory_count,
+            PI.inventory_pounds,
+            PI.warning_inventory_line,
+            PI.update_datetime,
+            PI.is_delete
+        from
+            t_pig_inventory PI
+        where
+            PI.inventory_count &lt; PI.warning_inventory_line and is_delete = 0
+        limit #{pageSize} offset #{offset}
+    </select>
+
+
+    <!-- List<PigInventoryEntity> pageQueryWarningInventoryByCondition(Integer function, Integer type, Integer pageNum, Integer pageSize);-->
+    <select id="pageQueryWarningInventoryByCondition" resultMap="PigInventoryEntityMap">
+        select
+            PI.id,
+            PI.function_id,
+            PI.type_id,
+            PI.inventory_count,
+            PI.inventory_pounds,
+            PI.warning_inventory_line,
+            PI.update_datetime,
+            PI.is_delete
+        from
+            t_pig_inventory PI
+        <where>
+            PI.inventory_count &lt; PI.warning_inventory_line and is_delete = 0
+            <if test="functionId != null">
+                and function_id = #{functionId}
+            </if>
+            <if test="typeId != null">
+                and type_id = #{typeId}
+            </if>
+        </where>
+        limit #{pageSize} offset #{offset}
+    </select>
+
+    <select id="getPigInventoryEntityById" resultMap="PigInventoryEntityMap">
+        select
+            PI.id,
+            PI.function_id,
+            PI.type_id,
+            PI.inventory_count,
+            PI.inventory_pounds,
+            PI.warning_inventory_line,
+            PI.update_datetime,
+            PI.is_delete
+        from
+            t_pig_inventory PI
+        where
+            id = #{id} and is_delete = 0
+    </select>
+
+    <!-- int modifyInventoryDeadLine(Integer id, Integer warningInventoryLine, LocalDateTime updateDatetime);-->
+    <update id="modifyInventoryDeadLine">
+        update
+            t_pig_inventory
+        set
+            warning_inventory_line = #{warningInventoryLine},
+            update_datetime = #{updateDatetime}
+        where
+            id = #{id}
+    </update>
+
+
+    <!--    更新库存数量
+            int modifyInventoryCount(Integer changeOfCount, Float changeOfPounds, Integer functionId, Integer typeId); -->
+    <update id="modifyInventoryCount">
+        update
+            t_pig_inventory
+        set
+            inventory_count = inventory_count + #{changeOfCount}
+            <if test="changeOfPounds != null">
+                and inventory_pounds = inventory_pounds + #{changeOfPounds}
+            </if>
+        where
+            function_id = #{functionId} and type_id = #{typeId}
+    </update>
+
+    <update id="modifyIsDeleteToZero">
+        update
+            t_pig_inventory
+        set
+            is_delete = 0
+        where
+            id = #{id}
+    </update>
+    <!-- int deleteInventory(Integer id); -->
+    <update id="deleteInventory" parameterType="Integer">
+        update
+            t_pig_inventory
+        set
+            is_delete = 1
+        where
+            id = #{id}
+    </update>
+
+
+    <!-- int addInventoryPattern(PigInventoryEntity pigInventoryEntity); -->
+    <insert id="addInventoryPattern" parameterType="com.tunan.inventoryManagementSystem.entity.PigInventoryEntity">
+        insert into t_pig_inventory
+        (id, function_id, type_id, inventory_count, inventory_pounds, warning_inventory_line, create_datetime, update_datetime, is_delete)
+        values
+        (
+         #{id},#{functionId},#{typeId},#{inventoryCount},#{inventoryPounds},#{warningInventoryLine},#{createDatetime},#{updateDatetime},#{isDelete}
+        )
+    </insert>
+
+    <!--   PigInventoryEntity judgeExistenceOrDelete(Integer id); -->
+    <select id="judgeExistenceOrDelete" resultMap="PigInventoryEntityMap">
+        select
+            id,is_delete
+        from
+            hog_inventory.t_pig_inventory
+        where
+            id = #{id}
+    </select>
+
+
+</mapper>

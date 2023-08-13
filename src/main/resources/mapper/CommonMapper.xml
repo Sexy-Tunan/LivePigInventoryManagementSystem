@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- UserMapper映射文件 -->
+<mapper namespace="com.tunan.inventoryManagementSystem.dao.CommonDao">
+
+<!--     市场销售价格 float getMarketSellingPrice(Integer pigFunctionId, Integer pigTypeId); -->
+    <select id="getMarketSellingPrice" resultType="Float">
+        select
+            market_selling_price
+        from
+            t_pig_price
+        where
+            function_id = #{pigFunctionId} and type_id = #{pigTypeId}
+    </select>
+
+
+
+    <!-- 市场采购价格 float getMarketPurchasePrice(Integer pigFunctionId, Integer pigTypeId); -->
+    <select id="getMarketPurchasePrice" resultType="Float">
+        select
+            market_purchase_price
+        from
+            t_pig_price
+        where
+            function_id = #{pigFunctionId} and type_id = #{pigTypeId}
+    </select>
+
+
+    <!-- 获取猪的功能 List<PigFunction> getAllPigFunction(); -->
+    <select id="getAllPigFunction" resultType="com.tunan.inventoryManagementSystem.entity.PigFunction">
+        select *
+        from t_pig_function
+    </select>
+
+
+    <!-- 获取所有猪的种类 List<PigType> getAllPigType(); -->
+    <select id="getAllPigType" resultType="com.tunan.inventoryManagementSystem.entity.PigType">
+        select *
+        from t_pig_type
+    </select>
+
+
+    <!-- 获取所有角色 List<Role> getAllRole(); -->
+    <select id="getAllRole" resultType="com.tunan.inventoryManagementSystem.entity.Role">
+        select *
+        from t_role
+    </select>
+
+</mapper>

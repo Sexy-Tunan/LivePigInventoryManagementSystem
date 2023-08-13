@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- UserMapper映射文件 -->
+<mapper namespace="com.tunan.inventoryManagementSystem.dao.SalesmanDao">
+    <resultMap id="SalesmanEntityMap" type="com.tunan.inventoryManagementSystem.entity.SalesmanEntity">
+        <result column="id" property="id" jdbcType="BIGINT"/>
+        <result column="role_id" property="roleId" jdbcType="SMALLINT"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="phone_number" property="phoneNumber" jdbcType="VARCHAR"/>
+        <result column="identity_number" property="identityNumber" jdbcType="VARCHAR"/>
+        <result column="address" property="address" jdbcType="VARCHAR"/>
+        <result column="onboarding_datetime" property="onBoardingDatetime" jdbcType="TIMESTAMP" typeHandler="org.apache.ibatis.type.LocalDateTimeTypeHandler"/>
+        <result column="dimission_datetime" property="dimissionDatetime" jdbcType="TIMESTAMP" typeHandler="org.apache.ibatis.type.LocalDateTimeTypeHandler"/>
+        <result column="is_dimission" property="isDimission" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <select id="count" resultType="int">
+        select count(*) from t_salesman
+        where
+            is_dimission = 0
+    </select>
+
+
+    <!-- 根据采购员表的主键查询详细信息
+         SalesmanEntity getSalesmanById(Long id);
+    -->
+    <select id="getSalesmanById" resultMap="SalesmanEntityMap">
+        SELECT
+           TS.id,
+           TS.role_id,
+           TS.name,
+           TS.phone_number,
+           TS.identity_number,
+           TS.address,
+           TS.onboarding_datetime,
+           TS.dimission_datetime
+        FROM
+            t_salesman as TS
+        WHERE id = #{id} and is_dimission = 0;
+    </select>
+
+
+    <!-- 分页查询采购员
+         List<SalesmanEntity> pageQuerySalesmans(Integer offset, Integer pageSize);
+    -->
+    <select id="pageQuerySalesmans" resultMap="SalesmanEntityMap">
+        SELECT
+            TS.id,
+            TS.role_id,
+            TS.name,
+            TS.phone_number,
+            TS.identity_number,
+            TS.address,
+            TS.onboarding_datetime,
+            TS.dimission_datetime
+        FROM
+            t_salesman as TS
+        WHERE is_dimission = 0
+        LIMIT #{pageSize} offset #{offset}
+    </select>
+
+    <!-- 获取所有销售员
+         List<SalesmanEntity>  getAllSalesman();
+    -->
+    <select id="getAllSalesman" resultMap="SalesmanEntityMap">
+        SELECT
+            TS.id,
+            TS.role_id,
+            TS.name,
+            TS.phone_number,
+            TS.identity_number,
+            TS.address,
+            TS.onboarding_datetime,
+            TS.dimission_datetime
+        FROM
+            t_salesman as TS
+    </select>
+
+
+    <!-- 根据名字查抄销售员
+         List<SalesmanEntity> getSalesmanByName(String name);
+    -->
+    <select id="getSalesmanByName" resultMap="SalesmanEntityMap">
+        SELECT
+            TS.id,
+            TS.role_id,
+            TS.name,
+            TS.phone_number,
+            TS.identity_number,
+            TS.address,
+            TS.onboarding_datetime,
+            TS.dimission_datetime
+        FROM
+            t_salesman as TS
+        where name = #{name}
+    </select>
+
+
+
+    <!-- 根据名字查找销售员的ID
+         List<Long> getSalesmanIdByName(String name);
+    -->
+    <select id="getSalesmanIdByName" parameterType="String" resultType="Long">
+        SELECT
+            TS.id
+        FROM
+            t_salesman as TS
+        where
+            name = #{name}
+    </select>
+
+
+
+    <!-- 模糊查询
+         List<SalesmanEntity> fuzzyQuery(String phoneNumber, String address);
+    -->
+    <select id="fuzzyQuery" resultMap="SalesmanEntityMap">
+        SELECT
+            TS.id,
+            TS.role_id,
+            TS.name,
+            TS.phone_number,
+            TS.identity_number,
+            TS.address,
+            TS.onboarding_datetime,
+            TS.dimission_datetime
+        FROM
+            t_salesman as TS
+        <where>
+            <if test="phoneNumber == null and address == null">
+                1=0
+            </if>
+            <if test="phoneNumber != null">
+                phone_number = #{phoneNumber}
+            </if>
+            <if test="address != null">
+                address LIKE concat('%',#{address},'%')
+            </if>
+        </where>
+    </select>
+
+    <!-- 添加销售员
+         int addSalesman(SalesmanEntity salesmanEntity);
+    -->
+    <insert id="addSalesman" parameterType="com.tunan.inventoryManagementSystem.entity.SalesmanEntity">
+        insert into t_salesman
+        (role_id, name,
+         phone_number, identity_number,
+         address, onboarding_datetime,is_dimission)
+        VALUES
+        (
+            #{roleId},#{name},#{phoneNumber},
+            #{identityNumber},#{address},
+            #{onBoardingDatetime},#{isDimission}
+        )
+    </insert>
+
+
+
+    <!-- 删除销售员
+         int delSalesman(Long id, LocalDateTime now);
+    -->
+    <update id="delSalesman">
+        update t_purchaser
+        set is_dimission = 1,
+            dimission_datetime = #{now}
+        where id = #{id}
+    </update>
+
+
+
+    <!-- 修改销售员
+         int updateSalesman(SalesmanVO salesmanVO);
+    -->
+    <update id="updateSalesman" parameterType="com.tunan.inventoryManagementSystem.entity.VO.SalesmanVO">
+        update t_salesman
+        <set>
+            <if test="name != null and name != ''">
+                name = #{name}
+            </if>
+            <if test="phoneNumber != null and phoneNumber != ''">
+                phone_number = #{phoneNumber}
+            </if>
+            <if test="identityNumber != null and identityNumber != ''">
+                identity_number = #{identityNumber}
+            </if>
+            <if test="address != null and address != ''">
+                address = #{address}
+            </if>
+            <if test="onBoardingDatetime != null">
+                onboarding_datetime = #{onBoardingDatetime}
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+</mapper>

@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- UserMapper映射文件 -->
+<mapper namespace="com.tunan.inventoryManagementSystem.dao.CustomerDao">
+
+    <resultMap id="CustomerVOMap" type="com.tunan.inventoryManagementSystem.entity.VO.CustomerVO">
+        <result column="id" property="id" jdbcType="BIGINT"/>
+        <result column="enterprise_name" property="enterpriseName" jdbcType="VARCHAR"/>
+        <result column="address" property="address" jdbcType="VARCHAR"/>
+        <result column="contact" property="contact" jdbcType="VARCHAR"/>
+        <result column="contact_identity_number" property="identityNumber" jdbcType="VARCHAR"/>
+        <result column="phone_number" property="phoneNumber" jdbcType="VARCHAR"/>
+        <result column="create_datetime" property="createDatetime" jdbcType="TIMESTAMP" typeHandler="org.apache.ibatis.type.LocalDateTimeTypeHandler"/>
+    </resultMap>
+
+    <select id="count" resultType="int">
+        select count(*) from t_customer
+        where
+            is_delete = 0
+    </select>
+
+    <select id="pageQueryCustomers" resultMap="CustomerVOMap">
+        select
+            TC.id,
+            TC.address,
+            TC.contact,
+            TC.contact_identity_number,
+            TC.enterprise_name,
+            TC.phone_number,
+            TC.create_datetime
+        from
+            t_customer as TC
+        where TC.is_delete = 0
+        limit #{pageSize} offset #{offset}
+    </select>
+
+    <select id="getAllCustomerName" resultType="String">
+        SELECT TC.enterprise_name
+        FROM t_customer as TC
+        where is_delete = 0
+    </select>
+
+
+    <select id="getAllCustomer" resultMap="CustomerVOMap">
+        select
+            TC.id,
+            TC.address,
+            TC.contact,
+            TC.contact_identity_number,
+            TC.enterprise_name,
+            TC.phone_number,
+            TC.create_datetime
+        from
+            t_customer as TC
+        where is_delete = 0
+    </select>
+
+
+    <select id="getCustomerByName" resultMap="CustomerVOMap" parameterType="String">
+        select
+            TC.id,
+            TC.address,
+            TC.contact,
+            TC.contact_identity_number,
+            TC.enterprise_name,
+            TC.phone_number,
+            TC.create_datetime
+        from
+            t_customer as TC
+        where enterprise_name = #{enterpriseName} and is_delete = 0
+    </select>
+
+
+    <select id="getIdByEnterPriseName" parameterType="String">
+        SELECT TC.id
+        FROM t_customer as TC
+        WHERE enterprise_name = #{enterpriseName}
+    </select>
+
+
+    <select id="getCustomerById" resultMap="CustomerVOMap" parameterType="Long">
+        select
+            TC.id,
+            TC.address,
+            TC.contact,
+            TC.contact_identity_number,
+            TC.enterprise_name,
+            TC.phone_number,
+            TC.create_datetime
+        from
+            t_customer as TC
+        where id = #{id} and is_delete = 0
+    </select>
+
+
+
+    <select id="getCustomersByContact" resultMap="CustomerVOMap" parameterType="String">
+        select
+            TC.id,
+            TC.address,
+            TC.contact,
+            TC.contact_identity_number,
+            TC.enterprise_name,
+            TC.phone_number,
+            TC.create_datetime
+        from
+            t_customer as TC
+        where contact = #{contact} and is_delete = 0
+    </select>
+
+
+    <select id="getCustomersByConditions" resultMap="CustomerVOMap">
+        select
+            TC.id,
+            TC.address,
+            TC.contact,
+            TC.contact_identity_number,
+            TC.enterprise_name,
+            TC.phone_number,
+            TC.create_datetime
+        from
+            t_customer as TC
+        <where>
+            <if test="contact != null">
+                TP.contact = #{contact}
+            </if>
+            <if test="phoneNumber != null">
+                TP.phone_number = #{phoneNumber}
+            </if>
+            <if test="address != null">
+                TP.address LIKE concat('%',#{address},'%')
+            </if>
+        </where>
+    </select>
+
+
+
+
+    <insert id="addCustomer" parameterType="com.tunan.inventoryManagementSystem.entity.CustomerEntity">
+        insert into t_customer
+        (
+            enterprise_name,
+            address, contact,
+            contact_identity_number,
+            phone_number, create_datetime,
+            update_datetime, is_delete
+        )
+        VALUES
+        (
+            #{enterpriseName},#{address},#{contact},#{identityNumber},
+            #{phoneNumber},#{createDatetime},#{updateDatetime},#{isDelete}
+        )
+    </insert>
+
+
+
+    <update id="delCustomerById">
+        update t_customer
+        set is_delete = 1
+        where id = #{id}
+    </update>
+
+
+    <!-- 删除供应商 int delProvider(String enterpriseName);-->
+    <update id="delCustomerByName">
+        update t_customer
+        set is_delete = 1
+        where enterprise_name = #{enterpriseName}
+    </update>
+
+
+    <!-- 修改供应商的基本信息 int updateProviderBaseMsg(ProviderVO providerVO);-->
+    <update id="updateCustomerBaseMsg" parameterType="com.tunan.inventoryManagementSystem.entity.CustomerEntity">
+        update t_customer
+        set
+            update_datetime = #{updateDatetime}
+            <if test="enterpriseName != null and enterpriseName != ''">
+                ,enterprise_name = #{enterpriseName}
+            </if>
+            <if test="contact != null and identityNumber != null">
+                ,contact = #{contact}
+                ,contact_identity_number = #{identityNumber}
+            </if>
+            <if test="phoneNumber != null and phoneNumber != ''">
+                ,phone_number = #{phoneNumber}
+            </if>
+            <if test="address != null">
+                ,address = #{address}
+            </if>
+        where
+            id = #{id}
+    </update>
+</mapper>

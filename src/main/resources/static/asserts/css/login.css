@@ -1,0 +1,24 @@
+body {
+  /* 背景 */
+  background-image: radial-gradient(circle farthest-corner at 92.3% 71.5%, #538ad6 0%, #86e7d6 90%);
+  /* background-repeat:no-repeat; */
+  height: 100vh;
+  padding-top: 10%;
+}
+.panel.panel-success {
+  width: 300px;
+  margin: auto;
+}
+.panel.panel-success .panel-title {
+  text-align: center;
+}
+.panel.panel-success .panel-body .alert.alert-warning.fade.in {
+  margin-bottom: 0;
+}
+.panel.panel-success .panel-body .btn.btn-defaultr {
+  margin-top: 20px;
+}
+.panel.panel-success .panel-body .btn.btn-defaultr:hover {
+  /* 鼠标悬浮登录按钮变色提示 */
+  color: #80cad5;
+}

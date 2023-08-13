@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- UserMapper映射文件 -->
+<mapper namespace="com.tunan.inventoryManagementSystem.dao.PurchaserDao">
+
+    <resultMap id="PurchaserEntityMap" type="com.tunan.inventoryManagementSystem.entity.PurchaserEntity">
+        <result column="id" property="id" jdbcType="BIGINT"/>
+        <result column="role_id" property="roleId" jdbcType="SMALLINT"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="phone_number" property="phoneNumber" jdbcType="VARCHAR"/>
+        <result column="identity_number" property="identityNumber" jdbcType="VARCHAR"/>
+        <result column="address" property="address" jdbcType="VARCHAR"/>
+        <result column="onboarding_datetime" property="onBoardingDatetime" jdbcType="TIMESTAMP" typeHandler="org.apache.ibatis.type.LocalDateTimeTypeHandler"/>
+        <result column="dimission_datetime" property="dimissionDatetime" jdbcType="TIMESTAMP" typeHandler="org.apache.ibatis.type.LocalDateTimeTypeHandler"/>
+        <result column="is_dimission" property="isDimission" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <select id="count" resultType="int">
+        select count(*) from t_purchaser
+        where
+            is_dimission = 0
+    </select>
+
+    <!-- 根据采购员表的主键查询详细信息  public PurchaserEntity getPurchaserById(Long id) -->
+    <select id="getPurchaserById" resultMap="PurchaserEntityMap">
+        SELECT
+            TP.id,
+            TP.role_id,
+            TP.name,
+            TP.phone_number,
+            TP.identity_number,
+            TP.address,
+            TP.onboarding_datetime,
+            TP.dimission_datetime
+        FROM
+            t_purchaser as TP
+        WHERE
+            id = #{id} and is_dimission = 0;
+    </select>
+
+
+    <!-- 分页查询采购员  public List<PurchaserVO> pageQueryPurchasers(Integer offset, Integer pageSize); -->
+    <select id="pageQueryPurchasers" resultMap="PurchaserEntityMap">
+        SELECT
+            TP.id,
+            TP.role_id,
+            TP.name,
+            TP.phone_number,
+            TP.identity_number,
+            TP.address,
+            TP.onboarding_datetime,
+            TP.dimission_datetime
+        FROM
+            t_purchaser as TP
+        WHERE
+            is_dimission = 0
+        LIMIT #{pageSize} offset #{offset}
+    </select>
+
+
+
+
+    <!-- 获取所有采购员
+         List<PurchaserEntity> getAllPurchaser();
+    -->
+    <select id="getAllPurchaser" resultMap="PurchaserEntityMap">
+        SELECT
+            TP.id,
+            TP.role_id,
+            TP.name,
+            TP.phone_number,
+            TP.identity_number,
+            TP.address,
+            TP.onboarding_datetime,
+            TP.dimission_datetime
+        FROM
+            t_purchaser as TP
+    </select>
+
+    <!-- 模糊查询
+         List<PurchaserEntity> fuzzyQuery(String phoneNumber, String address);
+    -->
+    <select id="fuzzyQuery" resultMap="PurchaserEntityMap">
+        SELECT
+            TP.id,
+            TP.role_id,
+            TP.name,
+            TP.phone_number,
+            TP.identity_number,
+            TP.address,
+            TP.onboarding_datetime,
+            TP.dimission_datetime
+        FROM
+            t_purchaser as TP
+        <where>
+            <if test="phoneNumber == null and address == null">
+                1=0
+            </if>
+            <if test="phoneNumber != null">
+                phone_number = #{phoneNumber}
+            </if>
+            <if test="address != null">
+                address LIKE concat('%',#{address},'%')
+            </if>
+        </where>
+    </select>
+
+
+    <!-- 添加采购员  public int addPurchaser(PurchaserEntity purchaserEntity); -->
+    <insert id="addPurchaser" parameterType="com.tunan.inventoryManagementSystem.entity.PurchaserEntity">
+        insert into t_purchaser
+        (role_id, name,
+         phone_number, identity_number,
+         address, onboarding_datetime,is_dimission)
+         VALUES
+        (
+         #{roleId},#{name},#{phoneNumber},
+         #{identityNumber},#{address},
+         #{onBoardingDatetime},#{isDimission}
+        )
+    </insert>
+
+
+
+    <!-- 删除采购员  public int delPurchaser(Integer id, LocalDateTime now); -->
+    <update id="delPurchaser">
+        update t_purchaser
+        set is_dimission = 1,
+            dimission_datetime = #{now}
+        where id = #{id}
+    </update>
+
+
+
+    <!-- 修改采购员  public int updatePurchaser(PurchaserVO purchaserVO); -->
+    <update id="updatePurchaser" parameterType="com.tunan.inventoryManagementSystem.entity.VO.ProviderVO">
+        update t_purchaser
+        <set>
+            <if test="name != null and name != ''">
+                name = #{name}
+            </if>
+            <if test="phoneNumber != null and phoneNumber != ''">
+                phone_number = #{phoneNumber}
+            </if>
+            <if test="identityNumber != null and identityNumber != ''">
+                identity_number = #{identityNumber}
+            </if>
+            <if test="address != null and address != ''">
+                address = #{address}
+            </if>
+            <if test="onBoardingDatetime != null">
+                onboarding_datetime = #{onBoardingDatetime}
+            </if>
+        </set>
+        where
+            id = #{id}
+    </update>
+</mapper>

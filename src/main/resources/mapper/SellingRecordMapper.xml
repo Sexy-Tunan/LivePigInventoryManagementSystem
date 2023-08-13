@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- UserMapper映射文件 -->
+<mapper namespace="com.tunan.inventoryManagementSystem.dao.SellingRecordDao">
+
+    <resultMap id="SellingRecordEntityMap" type="com.tunan.inventoryManagementSystem.entity.SellingRecordEntity">
+        <result column="id" property="id" jdbcType="BIGINT" />
+        <result column="record_number" property="recordNumber" jdbcType="VARCHAR"/>
+        <result column="function_id" property="pigFunctionId" jdbcType="SMALLINT" />
+        <result column="type_id" property="pigTypeId" jdbcType="SMALLINT" />
+        <result column="customer_id" property="customerId" jdbcType="BIGINT"/>
+        <result column="selling_count" property="sellingCount" jdbcType="INTEGER" />
+        <result column="pounds" property="pounds" jdbcType="REAL" />
+        <result column="expected_selling_price" property="expectedSellingPrice" jdbcType="REAL"/>
+        <result column="actual_selling_price" property="actualSellingPrice" jdbcType="REAL"/>
+        <result column="create_datetime" property="createDatetime" jdbcType="TIMESTAMP" typeHandler="org.apache.ibatis.type.LocalDateTimeTypeHandler"/>
+        <result column="update_datetime" property="updateDatetime" jdbcType="TIMESTAMP" typeHandler="org.apache.ibatis.type.LocalDateTimeTypeHandler"/>
+        <result column="salesman_id" property="salesmanId" jdbcType="BIGINT"/>
+        <result column="is_return" property="isReturn" jdbcType="TINYINT"/>
+        <result column="is_delete" property="isDelete" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <select id="count" resultType="int">
+        select count(*) from t_selling_record
+        where
+            is_delete = 0
+    </select>
+
+    <!-- List<SellingRecordEntity> pageQuery(int pageNum,int pageSize); -->
+    <select id="pageQuery" resultMap="SellingRecordEntityMap">
+        select
+            SR.id,
+            SR.record_number,
+            SR.function_id,
+            SR.type_id,
+            SR.customer_id,
+            SR.selling_count,
+            SR.pounds,
+            SR.expected_selling_price,
+            SR.actual_selling_price,
+            SR.salesman_id,
+            SR.create_datetime,
+            SR.update_datetime
+        from
+            t_selling_record as SR
+        where
+            SR.is_delete = 0 and SR.is_return = 0
+        <if test="sortType == 1">
+            order by create_datetime
+        </if>
+        limit #{pageSize} offset #{offset}
+    </select>
+
+
+    <!-- 分页查询但是收到登录用户的身份影响
+        List<SellingRecordEntity> pageQueryLimitToRole(Integer offset, Integer pageSize, Integer sortType, Long workerId);
+    -->
+    <select id="pageQueryLimitToRole">
+        select
+            SR.id,
+            SR.record_number,
+            SR.function_id,
+            SR.type_id,
+            SR.customer_id,
+            SR.selling_count,
+            SR.pounds,
+            SR.expected_selling_price,
+            SR.actual_selling_price,
+            SR.salesman_id,
+            SR.create_datetime,
+            SR.update_datetime
+        from
+            t_selling_record as SR
+        where
+            SR.salesman_id = #{workerId} and SR.is_delete = 0 and SR.is_return = 0
+        <if test="sortType == 1">
+            order by create_datetime
+        </if>
+        limit #{pageSize} offset #{offset}
+    </select>
+
+    <!-- //条件查询销售记录单
+    List<SellingRecordEntity> pageQueryByBaseCondition( Integer pigFunctionId, Integer pigTypeId,
+                                                        Integer pageNum,    Integer offset);
+    -->
+    <select id="pageQueryByBaseCondition" resultMap="SellingRecordEntityMap">
+        select
+            SR.id,
+            SR.record_number,
+            SR.function_id,
+            SR.type_id,
+            SR.customer_id,
+            SR.selling_count,
+            SR.pounds,
+            SR.expected_selling_price,
+            SR.actual_selling_price,
+            SR.salesman_id,
+            SR.create_datetime,
+            SR.update_datetime
+        from
+            t_selling_record as SR
+        where
+            is_delete = 0 and is_return = 0
+            <if test="pigFunctionId != null">
+                and SR.function_id = #{pigFunctionId}
+            </if>
+            <if test="pigTypeId != null">
+                and SR.type_id = #{pidTypeId}
+            </if>
+            <if test="pigFunctionId == null and pigTypeId == null">
+                and 1=0
+            </if>
+            <if test="roleId != 1 and roleId != 2">
+                and SR.salesman_id = #{workerId}
+            </if>
+    </select>
+
+
+    <!--    //根据始末时间查询某段时间范围内的所有记录
+    List<SellingRecordEntity> getSellingRecordsByTime(LocalDateTime startDate, LocalDateTime deadTime);
+    -->
+    <select id="getSellingRecordsByTime" resultMap="SellingRecordEntityMap">
+        select
+            SR.id,
+            SR.record_number,
+            SR.function_id,
+            SR.type_id,
+            SR.customer_id,
+            SR.selling_count,
+            SR.pounds,
+            SR.expected_selling_price,
+            SR.actual_selling_price,
+            SR.salesman_id,
+            SR.create_datetime,
+            SR.update_datetime
+        from
+            t_selling_record as SR
+        where
+            create_datetime between #{startDate} and #{deadTime}
+            and is_return = 0 and is_delete = 0
+            <if test="roleId != 1 and roleId != 2">
+                and salesman_id #{workerId}
+            </if>
+    </select>
+
+
+    <!-- 根据订单的数据库主键来查询其对应订单的worker的id
+         Long getWorkerIdById(Long id); -->
+    <select id="getWorkerIdById" resultType="Long">
+        select
+            salesman_id
+        from
+            t_selling_record
+        where
+            id = #{id} and is_return = 0 and is_delete = 0
+    </select>
+
+
+    <!-- 根据订单号查询订单 -->
+    <select id="getSellingRecordByRecordNumber" resultMap="SellingRecordEntityMap">
+        select
+            SR.id,
+            SR.record_number,
+            SR.function_id,
+            SR.type_id,
+            SR.customer_id,
+            SR.selling_count,
+            SR.pounds,
+            SR.expected_selling_price,
+            SR.actual_selling_price,
+            SR.salesman_id,
+            SR.create_datetime,
+            SR.update_datetime
+        from
+            t_selling_record as SR
+        where
+            SR.record_number = #{recordNumber}
+            <if test="roleId != 1 and roleId != 2">
+                and SR.salesman_id = #{workerId}
+            </if>
+            and is_return = 0 and is_delete = 0
+    </select>
+
+
+    <!-- 根据经销商的企业ID查询对应的销售单
+         List<SellingRecordEntity> getSellingRecordByCustomerId(Long customerId);
+    -->
+    <select id="getSellingRecordByCustomerId" resultMap="SellingRecordEntityMap">
+        select
+            SR.id,
+            SR.record_number,
+            SR.function_id,
+            SR.type_id,
+            SR.customer_id,
+            SR.selling_count,
+            SR.pounds,
+            SR.expected_selling_price,
+            SR.actual_selling_price,
+            SR.salesman_id,
+            SR.create_datetime,
+            SR.update_datetime
+        from
+            t_selling_record as SR
+        where
+            customer_id = #{customerId}
+            <if test="roleId != 1 and roleId != 2">
+                and salesman_id = #{workerId}
+            </if>
+            and is_delete = 0 and is_return = 0
+    </select>
+
+    <!--  根据purchaserId查找订单
+          List<SellingRecordEntity> getSellingRecordBySalesmanId(Long salesmanId);
+    -->
+    <select id="getSellingRecordBySalesmanId" resultMap="SellingRecordEntityMap">
+        select
+            SR.id,
+            SR.record_number,
+            SR.function_id,
+            SR.type_id,
+            SR.customer_id,
+            SR.selling_count,
+            SR.pounds,
+            SR.expected_selling_price,
+            SR.actual_selling_price,
+            SR.salesman_id,
+            SR.create_datetime,
+            SR.update_datetime
+        from
+            t_selling_record as SR
+        WHERE
+            salesman_id = #{salesmanId} and is_delete = 0 and is_return = 0
+    </select>
+
+
+    <select id="getSellingRecordById" resultMap="SellingRecordEntityMap">
+        select
+            SR.id,
+            SR.record_number,
+            SR.function_id,
+            SR.type_id,
+            SR.customer_id,
+            SR.selling_count,
+            SR.pounds,
+            SR.expected_selling_price,
+            SR.actual_selling_price,
+            SR.salesman_id,
+            SR.create_datetime,
+            SR.update_datetime
+        from
+            t_selling_record as SR
+        where
+            SR.id = #{id} and is_delete = 0 and is_return = 0
+    </select>
+
+
+    <!-- int delSellingRecordByRecordNumber(String recordNumber); -->
+    <update id="delSellingRecordByRecordNumber" parameterType="String">
+        update t_selling_record
+        set is_delete = 1
+        where record_number = #{recordNumber}
+    </update>
+
+
+    <!-- int delSellingRecordById(Long id); -->
+    <update id="delSellingRecordById" parameterType="Long">
+        update t_selling_record
+        set is_delete = 1
+        where id = #{id}
+    </update>
+
+    <!-- int addSellingRecord(SellingRecordEntity sellingRecordEntity); -->
+    <insert id="addSellingRecord" parameterType="com.tunan.inventoryManagementSystem.entity.SellingRecordEntity">
+        insert into t_selling_record
+        (
+         record_number, function_id, type_id,
+         salesman_id, customer_id, selling_count,
+         pounds, expected_selling_price, actual_selling_price,
+         create_datetime, update_datetime,is_delete,is_return
+         )
+         VALUES
+         (
+         #{recordNumber},#{pigFunctionId},#{pigTypeId},
+         #{salesmanId},#{customerId},#{sellingCount},
+         #{pounds},#{expectedSellingPrice},#{actualSellingPrice},
+         #{createDatetime},#{updateDatetime},#{isDelete},#{isReturn}
+         )
+    </insert>
+
+    <!-- int updateSellingRecord(SellingRecordEntity sellingRecordEntity); -->
+    <update id="updateSellingRecord" parameterType="com.tunan.inventoryManagementSystem.entity.SellingRecordEntity">
+        update
+            t_selling_record
+        set
+            update_datetime = #{updateDatetime}
+            <if test="pigTypeId != null">
+                ,type_id = #{pigTypeId}
+            </if>
+            <if test="pigFunctionId != null">
+                ,function_id = #{pigFunctionId}
+            </if>
+            <if test="customerId != null">
+                ,customer_id = #{customerId}
+            </if>
+            <if test="sellingCount != null">
+                ,selling_count = #{sellingCount}
+            </if>
+            <if test="pounds != null">
+                ,pounds = #{pounds}
+            </if>
+            <if test="actualSellingPrice != null">
+                ,actual_selling_price = #{actualSellingPrice}
+            </if>
+            <if test="expectedSellingPrice != null">
+                ,expected_selling_price = #{expectedSellingPrice}
+            </if>
+
+        where id = #{id}
+    </update>
+</mapper>
